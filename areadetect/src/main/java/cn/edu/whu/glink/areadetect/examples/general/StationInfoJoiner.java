@@ -1,10 +1,10 @@
 package cn.edu.whu.glink.areadetect.examples.general;
 
-import cn.edu.whu.glink.index.GeographicalGridIndex;
 import cn.edu.whu.glink.areadetect.examples.IO.source.helper.UnitPointReader;
 import cn.edu.whu.glink.areadetect.feature.DetectUnit;
 import cn.edu.whu.glink.areadetect.graph.NeighborReader;
 import cn.edu.whu.glink.areadetect.graph.PolygonReader;
+import cn.edu.whu.glink.index.GeographicalGridIndex;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.configuration.Configuration;
 import org.locationtech.jts.geom.Point;

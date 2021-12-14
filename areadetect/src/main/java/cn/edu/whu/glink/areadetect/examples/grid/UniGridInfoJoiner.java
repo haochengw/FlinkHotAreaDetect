@@ -1,8 +1,7 @@
 package cn.edu.whu.glink.areadetect.examples.grid;
 
-import cn.edu.whu.glink.index.GeographicalGridIndex;
-import cn.edu.whu.glink.util.GeoUtils;
 import cn.edu.whu.glink.areadetect.feature.DetectUnit;
+import cn.edu.whu.glink.index.GeographicalGridIndex;
 import org.apache.flink.api.common.functions.MapFunction;
 
 import java.util.HashSet;
