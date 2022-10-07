@@ -28,20 +28,10 @@ public class UniGridInfoJoiner implements MapFunction<DetectUnit, DetectUnit> {
         long id = value.getId();
         double[] lngLat = gridIndex.getGridCenter(value.getId());
         // near by units;
-        List<Long> neighborsTemp = gridIndex.getNeighbors(id, 4);
-        if (distTreshhold > 0) {
-          neighborsTemp.addAll(gridIndex.kRing(id, (int) (distTreshhold/rasterSize)));
-        }
-        HashSet<Long> neighbors = new HashSet<>(neighborsTemp);
-        neighbors.remove(id);
+        HashSet<Long> neighbors = new HashSet<>(gridIndex.kRing(id, 1));
         // near by partitions;
-        Set<Long> nearByPartitions = new HashSet<>();
-        for (Long neighbor : neighbors) {
-          double[] lngLatN = gridIndex.getGridCenter(neighbor);
-          nearByPartitions.add(partitionIndex.getIndex(lngLatN[0], lngLatN[1]));
-        }
-
-        long mainPartition = partitionIndex.getIndex(lngLat[0], lngLat[1]);
+         long mainPartition = partitionIndex.getIndex(lngLat[0], lngLat[1]);
+        Set<Long> nearByPartitions = new HashSet<>(partitionIndex.kRing(mainPartition, 1));
         nearByPartitions.remove(mainPartition);
         // add info
         value.setMainPartition(mainPartition);

@@ -56,5 +56,6 @@ public class MseKafkaRasterMain {
     DataStream<Geometry> resultStream = detect.process();
     resultStream.addSink(new ResultFileSinkFunction(sinkFile)).setParallelism(1);
     env.execute("abc");
+
   }
 }

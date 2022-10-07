@@ -13,11 +13,18 @@ public class DetectUnit {
   Set<Long> nearByUnitsID;
   Set<Long> nearByPartitions;
   Polygon polygon;
+  public long pickUpCount = 0;
+  public long dropDownCount = 0;
+  public boolean isPickUp = false;
 
   public DetectUnit(Long id, Long timestamp, Object val) {
     this.id = id;
     this.timestamp = timestamp;
     this.val = val;
+  }
+
+  public void setPickUp(boolean pickUp) {
+    isPickUp = pickUp;
   }
 
   public Long getMainPartition() {

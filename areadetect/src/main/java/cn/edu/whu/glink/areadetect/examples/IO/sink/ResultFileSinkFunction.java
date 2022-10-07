@@ -3,6 +3,7 @@ package cn.edu.whu.glink.areadetect.examples.IO.sink;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
+import org.apache.flink.streaming.api.functions.sink.SinkFunction;
 import org.locationtech.jts.geom.Geometry;
 
 import java.io.BufferedWriter;

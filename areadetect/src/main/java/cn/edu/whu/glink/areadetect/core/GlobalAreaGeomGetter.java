@@ -5,6 +5,7 @@ import cn.edu.whu.glink.areadetect.feature.DetectUnit;
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple4;
+import org.apache.flink.api.java.tuple.Tuple5;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
@@ -14,6 +15,7 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Polygon;
 
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -53,9 +55,21 @@ public class GlobalAreaGeomGetter extends ProcessWindowFunction<Tuple2<AreaID, L
       target = target.union(entry.getValue());
     }
     // calculate area kpi
-    Object kpi = getKPI(detectUnits);
-    // userdata中存储： 1. 区域ID 2. 时间 3. 平均值 4. 异常检测单元数量
-    Tuple tuple = new Tuple4<>(areaID, sdf.format(new Date(context.window().getEnd())), kpi, detectUnits.size());
+    int count = 0;
+    int sum = 0;
+    int pickUpNum = 0;
+    for(DetectUnit unit : detectUnits) {
+      count ++;
+      pickUpNum += unit.pickUpCount;
+      sum += unit.pickUpCount + unit.dropDownCount;
+    }
+    double kpi = (double) sum / count;
+    double pickUpRatio = (double) pickUpNum / sum;
+    long ts = context.window().getEnd();
+    Instant i2 = Instant.ofEpochMilli(ts);
+    String time =  i2.toString();
+    // userdata中存储： 1. 区域ID 2. 时间 3. 平均值 4. 上客占比 5. 单元数量
+    Tuple tuple = new Tuple5<>(areaID, time, kpi, pickUpRatio, detectUnits.size());
     target.setUserData(tuple);
     out.collect(target);
   }

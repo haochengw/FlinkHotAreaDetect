@@ -198,18 +198,16 @@ public class GeographicalGridIndex extends GridIndex {
 
   @Override
   public List<Long> kRing(long index, int k) {
-    List<Long> res = new ArrayList<>(8*k);
+    List<Long> res = new ArrayList<>(8);
     long[] coor = this.getXY(index);
     long x = coor[0];
     long y = coor[1];
-    for (long i = x - k; i <= x + k; i++) {
-      res.add(combineXY(i, y + k));
-      res.add(combineXY(i, y - k));
+    for (long i = x - 1; i <= x + 1; i++) {
+      res.add(combineXY(i, y + 1));
+      res.add(combineXY(i, y - 1));
     }
-    for (long i = y-k+1; i <= y+k-1; i++) {
-      res.add(combineXY(x-k, i));
-      res.add(combineXY(x+k, i));
-    }
+    res.add(combineXY(x-1, y));
+    res.add(combineXY(x+1, y));
     return res;
   }
 
