@@ -4,10 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a10165d4-95ff-412d-a502-4908359d4406" name="Changes" comment="first commit">
-      <change afterPath="$PROJECT_DIR$/areadetect/readme.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/areadetect/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/areadetect/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+    <list default="true" id="a10165d4-95ff-412d-a502-4908359d4406" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -59,8 +57,6 @@
   </component>
   <component name="HighlightingSettingsPerFile">
     <setting file="jar://$MAVEN_REPOSITORY$/org/apache/flink/flink-streaming-java_2.11/1.13.2/flink-streaming-java_2.11-1.13.2.jar!/org/apache/flink/streaming/api/datastream/DataStream.class" root0="SKIP_INSPECTION" />
-    <setting file="jar:///Library/Java/JavaVirtualMachines/jdk1.8.0_301.jdk/Contents/Home/src.zip!/java/net/InterfaceAddress.java" root0="SKIP_INSPECTION" />
-    <setting file="jar:///Library/Java/JavaVirtualMachines/jdk1.8.0_301.jdk/Contents/Home/src.zip!/java/util/HashMap.java" root0="SKIP_INSPECTION" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -77,19 +73,26 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">
-    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
-    <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrary" value="JUnit3" />
-    <property name="com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrarySuperClass.JUnit3" value="junit.framework.TestCase" />
-    <property name="extract.method.default.visibility" value="private" />
-    <property name="last_directory_selection" value="$PROJECT_DIR$/areadetect/src/main/java/cn/edu/whu/glink/experiment" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="nodejs_package_manager_path" value="npm" />
-    <property name="project.structure.last.edited" value="Project" />
-    <property name="project.structure.proportion" value="0.0" />
-    <property name="project.structure.side.proportion" value="0.0" />
-  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;last_opened_file_path&quot;: &quot;I:/流式异常区域识别源代码&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;reference.settings.project.maven.ignored.files&quot;
+  },
+  &quot;keyToStringList&quot;: {
+    &quot;GitStage.ChangesTree.GroupingKeys&quot;: [
+      &quot;directory&quot;,
+      &quot;module&quot;,
+      &quot;repository&quot;
+    ]
+  }
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\123\Desktop\流式异常区域识别源代码\areadetect\src\main\java\cn\edu\whu\glink\shenzhen" />
@@ -181,19 +184,17 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Application.Pipeline" />
+      <item itemvalue="Application.ThresholdCalculator" />
       <item itemvalue="Application.PickDropTest" />
-      <item itemvalue="Application.cn.edu.whu.glink.shenzhen.thresholdcal.ThresholdCalculator" />
-      <item itemvalue="Application.cn.edu.whu.glink.shenzhen.Pipeline" />
       <item itemvalue="Application.ShapeFileUtil" />
       <item itemvalue="JUnit.GeographicalGridIndexTest.testKRing" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="JUnit.GeographicalGridIndexTest.testKRing" />
-        <item itemvalue="Application.cn.edu.whu.glink.shenzhen.Pipeline" />
         <item itemvalue="Application.PickDropTest" />
         <item itemvalue="Application.ShapeFileUtil" />
-        <item itemvalue="Application.cn.edu.whu.glink.shenzhen.thresholdcal.ThresholdCalculator" />
       </list>
     </recent_temporary>
   </component>
@@ -248,7 +249,9 @@
       <workItem from="1663466023061" duration="3961000" />
       <workItem from="1663661119865" duration="23000" />
       <workItem from="1663662847781" duration="27801000" />
-      <workItem from="1665126125385" duration="33294000" />
+      <workItem from="1665126125385" duration="34072000" />
+      <workItem from="1665220835931" duration="6218000" />
+      <workItem from="1665238682677" duration="1418000" />
     </task>
     <task id="LOCAL-00001" summary="first commit">
       <created>1638267374897</created>
@@ -298,6 +301,9 @@
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="UnknownFeatures">
+    <option featureType="dependencySupport" implementationName="java:org.apache.kafka:kafka-clients" />
+  </component>
   <component name="Vcs.Log.History.Properties">
     <option name="COLUMN_ID_ORDER">
       <list>
@@ -320,7 +326,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="main" />
+                        <option value="origin/main" />
                       </list>
                     </value>
                   </entry>
@@ -331,7 +337,6 @@
         </entry>
       </map>
     </option>
-    <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />

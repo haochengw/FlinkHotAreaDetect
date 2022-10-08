@@ -4,15 +4,21 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
 
-    <groupId>cn.edu.whu.glink</groupId>
+    <parent>
+        <artifactId>abnormal_detect</artifactId>
+        <groupId>com.github.io.glink</groupId>
+        <version>0.1-SNAPSHOT</version>
+    </parent>
+
     <artifactId>HotAreaDetect</artifactId>
     <modelVersion>4.0.0</modelVersion>
+    <packaging>jar</packaging>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <scala.binary.version>2.11</scala.binary.version>
-        <flink.version>1.14.0</flink.version>
+        <flink.version>1.13.3</flink.version>
         <jts.version>1.16.1</jts.version>
         <spatial4j.version>0.8</spatial4j.version>
     </properties>
@@ -34,32 +40,12 @@
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
-            <artifactId>gt-geojson</artifactId>
-            <version>24.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.geotools</groupId>
             <artifactId>gt-referencing</artifactId>
             <version>24.2</version>
         </dependency>
         <dependency>
             <groupId>org.geotools</groupId>
-            <artifactId>gt-metadata</artifactId>
-            <version>24.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.geotools</groupId>
-            <artifactId>gt-opengis</artifactId>
-            <version>24.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.geotools</groupId>
             <artifactId>gt-main</artifactId>
-            <version>24.2</version>
-        </dependency>
-        <dependency>
-            <groupId>org.geotools</groupId>
-            <artifactId>gt-epsg-hsql</artifactId>
             <version>24.2</version>
         </dependency>
         <dependency>
@@ -113,7 +99,6 @@
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-kafka_2.11</artifactId>
             <version>${flink.version}</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.flink</groupId>

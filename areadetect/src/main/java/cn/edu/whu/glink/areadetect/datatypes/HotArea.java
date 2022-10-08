@@ -14,14 +14,22 @@ import java.util.*;
 public class HotArea {
   static final Logger logger = LoggerFactory.getLogger(HotArea.class);
   private static final GeometryFactory gf = new GeometryFactory();
-  private final Set<DetectUnit> detectUnits;
+  private Set<DetectUnit> detectUnits;
   private AreaID areaID;
-  private final long timestamp;
+  private long timestamp;
 
   public HotArea(Set<DetectUnit> set, AreaID areaID) {
     this.detectUnits = set;
     this.areaID = areaID;
     timestamp = areaID.timestamp;
+  }
+
+  public void setDetectUnits(Set<DetectUnit> detectUnits) {
+    this.detectUnits = detectUnits;
+  }
+
+  public void setTimestamp(long timestamp) {
+    this.timestamp = timestamp;
   }
 
   public Set<DetectUnit> getDetectUnits() {

@@ -16,19 +16,27 @@ import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindow
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.locationtech.jts.geom.Geometry;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.Set;
 
 public class Job {
+
+  static Logger logger = LoggerFactory.getLogger(Job.class);
   static double s = 0.1; // 100米网格
   static long detectWindowLen = 10; // 10分钟滚动窗口
   static long detectWindowSlide = 10; // 10分钟滚动窗口
   static int partitionSize = 1; // 公里
-  static String TOPIC = "nyc-2016-01";
+  static String IN_TOPIC = "nyc-2015-01";
   static double thres = 7;
   static String SINKFILE = "2016-01-result";
   static String algo = "dist";
+
+  private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
   public static void main(String[] args) throws Exception {
     doJob(args);
@@ -45,7 +53,7 @@ public class Job {
       detectWindowSlide = Integer.parseInt(args[2]);
       thres = Integer.parseInt(args[3]);
       partitionSize = Integer.parseInt(args[4]);
-      TOPIC = args[5];
+      IN_TOPIC = args[5];
       algo = args[6];
     }
 
@@ -53,10 +61,19 @@ public class Job {
     TumblingEventTimeWindows tumblingEventTimeWindows = TumblingEventTimeWindows.of(Time.minutes(detectWindowSlide));
 
     SingleOutputStreamOperator<PickDropPoint> pointStream =
-             env.fromSource(KafkaUtil.getKafkaSource(TOPIC), WatermarkStrategy.noWatermarks(), "KafkaSource")
-                 .map(new RawRecordParser())
-                 .assignTimestampsAndWatermarks(WatermarkStrategy.<PickDropPoint>forBoundedOutOfOrderness(Duration.ofMinutes(5))
-                     .withTimestampAssigner((pickDropPoint, l) -> pickDropPoint.getTime()));
+             env.fromSource(KafkaUtil.getKafkaSource(IN_TOPIC),
+                             WatermarkStrategy
+                                     .<String>forBoundedOutOfOrderness(Duration.ofMinutes(5))
+                                     .withTimestampAssigner((line, timestamp) -> {
+                                       try {
+                                         return sdf.parse(line.split(",")[0]).getTime();
+                                       } catch (ParseException e) {
+                                         logger.error("Parse error found, line is {}", line);
+                                         throw new RuntimeException(e);
+                                       }
+                                     })
+                             , "KafkaSource")
+                 .map(new RawRecordParser());
 
     SingleOutputStreamOperator<DetectUnit> mappedStream = pointStream.map(new PointToDetectUnitMapper(s));
 
@@ -66,12 +83,12 @@ public class Job {
     // 热点区域识别, 两种实现方案: 分布式与集中式
     if (algo.equals("dist")) {
       new AreaDetect(hotGridStream, tumblingEventTimeWindows).distributed()
-          .map(new PostProcess())
-          .addSink(new cn.edu.whu.glink.examples.io.FileSink(SINKFILE)).setParallelism(1);
+          .map(new PostProcess());
+//          .addSink(new cn.edu.whu.glink.examples.io.FileSink(SINKFILE)).setParallelism(1);
     } else if (algo.equals("cent")) {
       new AreaDetect(hotGridStream, tumblingEventTimeWindows).centralized()
-          .map(new PostProcess())
-          .addSink(new cn.edu.whu.glink.examples.io.FileSink(SINKFILE)).setParallelism(1);
+          .map(new PostProcess());
+//          .addSink(new cn.edu.whu.glink.examples.io.FileSink(SINKFILE)).setParallelism(1);
     }
 
     env.execute("nyc-job");
@@ -80,7 +97,6 @@ public class Job {
 
 
   public static class PostProcess implements MapFunction<HotArea, Geometry> {
-
     @Override
     public Geometry map(HotArea hotArea) throws Exception {
       // 0. 区域ID 1. 时间 2. 平均值 3. 单元数量

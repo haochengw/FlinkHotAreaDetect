@@ -6,12 +6,13 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="areadetect" />
+        <module name="HotAreaDetect" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="abnormal_detect" target="1.8" />
       <module name="areadetect" target="1.8" />
+      <module name="HotAreaDetect" target="1.8" />
       <module name="流式异常区域识别源代码" target="1.8" />
     </bytecodeTargetLevel>
   </component>
