@@ -17,11 +17,11 @@ public class RawRecordParser implements MapFunction<String, PickDropPoint> {
   @Override
   public PickDropPoint map(String value) throws Exception {
     String[] tokens = value.split(",");
-    Date dateTime = sdf.parse(tokens[0]);
+    Date dateTime = sdf.parse(tokens[0].trim());
     long timestamp = dateTime.getTime();
-    double lng = Double.parseDouble(tokens[1]);
-    double lat = Double.parseDouble(tokens[2]);
-    int type = Integer.parseInt(tokens[3]);
+    double lng = Double.parseDouble(tokens[1].trim());
+    double lat = Double.parseDouble(tokens[2].trim());
+    int type = Integer.parseInt(tokens[3].trim());
     boolean isPickUp = type == 0;
     return new PickDropPoint(lng, lat, timestamp, isPickUp, null);
   }

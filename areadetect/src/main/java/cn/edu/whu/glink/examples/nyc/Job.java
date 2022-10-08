@@ -66,7 +66,8 @@ public class Job {
                                      .<String>forBoundedOutOfOrderness(Duration.ofMinutes(5))
                                      .withTimestampAssigner((line, timestamp) -> {
                                        try {
-                                         return sdf.parse(line.split(",")[0]).getTime();
+                                         long time = sdf.parse(line.split(",")[0]).getTime();
+                                         return time;
                                        } catch (ParseException e) {
                                          logger.error("Parse error found, line is {}", line);
                                          throw new RuntimeException(e);
