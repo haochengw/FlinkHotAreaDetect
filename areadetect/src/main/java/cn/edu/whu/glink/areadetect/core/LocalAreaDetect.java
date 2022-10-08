@@ -1,8 +1,9 @@
 package cn.edu.whu.glink.areadetect.core;
 
-import cn.edu.whu.glink.areadetect.feature.AreaID;
-import cn.edu.whu.glink.areadetect.feature.BoundryID;
-import cn.edu.whu.glink.areadetect.feature.DetectUnit;
+import cn.edu.whu.glink.areadetect.datatypes.AreaID;
+import cn.edu.whu.glink.areadetect.datatypes.BoundaryID;
+import cn.edu.whu.glink.areadetect.datatypes.DetectUnit;
+import cn.edu.whu.glink.areadetect.datatypes.HotArea;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.configuration.Configuration;
@@ -13,23 +14,27 @@ import org.apache.flink.util.OutputTag;
 
 import java.util.*;
 
-
-public class LocalAreaDetect extends ProcessWindowFunction<Tuple2<Long, DetectUnit>, Tuple2<AreaID, List<DetectUnit>>, Long, TimeWindow> {
+/**
+ * 3.3 区域识别 <br/>
+ * 以分区网格为单位, 基于网格生长算法, 并行作热点区域识别, 此处得到的热点区域中,
+ * 一部分可以直接输出,还有一些位于分区网格边缘的热点区域需要后续的全局合并.
+ */
+public class LocalAreaDetect extends ProcessWindowFunction<Tuple2<Long, DetectUnit>, HotArea, Long, TimeWindow> {
 
   // 边界区域ID，检测单元信息，局部区域ID。
-  OutputTag<Tuple3<BoundryID, DetectUnit, AreaID>> borderUnits;
+  OutputTag<Tuple3<BoundaryID, DetectUnit, AreaID>> boundariesTag;
   // 局部区域ID，局部区域中的全部检测单元。
-  OutputTag<Tuple2<AreaID, List<DetectUnit>>> needCombineTag;
+  OutputTag<HotArea> needCombineTag;
 
   @Override
   public void open(Configuration parameters) throws Exception {
-    borderUnits = new OutputTag<Tuple3<BoundryID, DetectUnit, AreaID>>("border") { };
-    needCombineTag = new OutputTag<Tuple2<AreaID, List<DetectUnit>>>("need combine") { };
+    boundariesTag = new OutputTag<Tuple3<BoundaryID, DetectUnit, AreaID>>("Boundaries") { };
+    needCombineTag = new OutputTag<HotArea>("NeedCombineAreas") { };
     super.open(parameters);
   }
 
   @Override
-  public void process(Long key, Context context, Iterable<Tuple2<Long, DetectUnit>> iterable, Collector<Tuple2<AreaID, List<DetectUnit>>> out) throws Exception {
+  public void process(Long key, Context context, Iterable<Tuple2<Long, DetectUnit>> iterable, Collector<HotArea> out) throws Exception {
     HashMap<Long, DetectUnit> visited = new HashMap<>();
     HashMap<Long, DetectUnit> units = new HashMap<>();
     int count = 0;
@@ -43,11 +48,11 @@ public class LocalAreaDetect extends ProcessWindowFunction<Tuple2<Long, DetectUn
       visited.put(unit.getId(), unit);
       // -----------  a new local area id;
       count++;
-      AreaID currAreaID = getLocalAreaID(key, count);
+      AreaID currAreaID = getLocalAreaID(key, count, context.window().getEnd());
       // ----------- flag indicating to sink or fix。
       boolean needCombine = false;
       // list to collect the data in the local area;
-      List<DetectUnit> uninList = new ArrayList<>();
+      Set<DetectUnit> uninList = new HashSet<>();
       // do dfs
       Stack<DetectUnit> stack = new Stack<>();
       stack.add(unit);
@@ -68,8 +73,8 @@ public class LocalAreaDetect extends ProcessWindowFunction<Tuple2<Long, DetectUn
             Long partitionOfNeighbor = neighbor.getMainPartition();
             if (!Objects.equals(partitionOfNeighbor, key)) { // 如果neighbor中一个点的邻居在分区外，说明这个点本身在边界上，需要把他的邻居发向下游的边界上。
               needCombine = true;
-              context.output(borderUnits, new Tuple3<>(getBorderID(key, partitionOfNeighbor), temp, currAreaID));
-              context.output(borderUnits, new Tuple3<>(getBorderID(key, partitionOfNeighbor), neighbor, currAreaID));
+              context.output(boundariesTag, new Tuple3<>(getBorderID(key, partitionOfNeighbor), temp, currAreaID));
+              context.output(boundariesTag, new Tuple3<>(getBorderID(key, partitionOfNeighbor), neighbor, currAreaID));
             } else {
               stack.push(neighbor);
             }
@@ -77,9 +82,9 @@ public class LocalAreaDetect extends ProcessWindowFunction<Tuple2<Long, DetectUn
         }
       }
       if (!needCombine) {
-        out.collect(new Tuple2<>(currAreaID, uninList));
+        out.collect(new HotArea(uninList, currAreaID));
       } else {
-        context.output(needCombineTag, new Tuple2<>(currAreaID, uninList));
+        context.output(needCombineTag, new HotArea(uninList, currAreaID));
       }
     }
   }
@@ -87,11 +92,11 @@ public class LocalAreaDetect extends ProcessWindowFunction<Tuple2<Long, DetectUn
   /**
    * 更小的分区id在左侧高位，更低的分区id在低位
    */
-  private BoundryID getBorderID(long a, long b) {
-    return new BoundryID(a, b);
+  private BoundaryID getBorderID(long a, long b) {
+    return new BoundaryID(a, b);
   }
 
-  private AreaID getLocalAreaID(Long partitionID, int count) {
-    return new AreaID(partitionID, count);
+  private AreaID getLocalAreaID(Long partitionID, int count, long time) {
+    return new AreaID(partitionID, count, time);
   }
 }

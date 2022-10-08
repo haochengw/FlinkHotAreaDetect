@@ -1,14 +1,17 @@
 package cn.edu.whu.glink.areadetect.core;
 
-import cn.edu.whu.glink.areadetect.feature.AreaID;
-import cn.edu.whu.glink.areadetect.feature.BoundryID;
-import cn.edu.whu.glink.areadetect.feature.DetectUnit;
+import cn.edu.whu.glink.areadetect.core.combine.centralized.CentralizedCombiner;
+import cn.edu.whu.glink.areadetect.core.combine.distributed.HotAreaFinalCombiner;
+import cn.edu.whu.glink.areadetect.core.combine.distributed.Local2GlobalMapRuleGetter;
+import cn.edu.whu.glink.areadetect.core.combine.distributed.LocalAreaLinkFinder;
+import cn.edu.whu.glink.areadetect.core.combine.distributed.RedundantRouter;
+import cn.edu.whu.glink.areadetect.datatypes.*;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.api.java.tuple.Tuple3;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.functions.co.ProcessJoinFunction;
-import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.OutputTag;
@@ -16,73 +19,94 @@ import org.locationtech.jts.geom.Geometry;
 
 import java.util.List;
 
+/**
+ *
+ */
 public class AreaDetect {
 
+  TumblingEventTimeWindows hotAreaDetectWindow;
 
-  /** 异常区域检测的滑动时间窗口 */
-  SlidingEventTimeWindows detectWindowAssigner;
-
-  /** 数据源，其中数据类型为{@link DetectUnit}. */
   SingleOutputStreamOperator<DetectUnit> source;
 
-
-  protected GeometryKpiGetter geometryKpiGetter;
-
+  /**
+   *
+   * @param source 热点监控单元数据流
+   * @param hotAreaDetectWindow 热点区域识别空间窗口, 为滚动窗口, 应与用于识别热点监控单元的滑动步长一致.
+   */
   public AreaDetect(SingleOutputStreamOperator<DetectUnit> source,
-                    SlidingEventTimeWindows detectWindowAssigner,
-                    GeometryKpiGetter geometryKpiGetter) {
+                    TumblingEventTimeWindows hotAreaDetectWindow) {
     this.source = source;
-    this.detectWindowAssigner = detectWindowAssigner;
-    this.geometryKpiGetter = geometryKpiGetter;
+    this.hotAreaDetectWindow = hotAreaDetectWindow;
   }
 
 
-  public DataStream<Geometry> process() {
-    final OutputTag<Tuple3<BoundryID, DetectUnit, AreaID>> borderUnits = new OutputTag<Tuple3<BoundryID, DetectUnit, AreaID>>("border") { };
-    final OutputTag<Tuple2<AreaID, List<DetectUnit>>> needCombineTag = new OutputTag<Tuple2<AreaID, List<DetectUnit>>>("need combine") { };
-    SingleOutputStreamOperator<Tuple2<AreaID, List<DetectUnit>>> localDetectStream = localDetect(source);
-    DataStream<Tuple2<AreaID, AreaID>> fixRule = getFixRule(localDetectStream.getSideOutput(borderUnits));
-    DataStream<Tuple2<AreaID, List<DetectUnit>>> globalAreas = assignGlobalID(fixRule, localDetectStream.getSideOutput(needCombineTag));
-    return getPolygon(globalAreas.union(localDetectStream), new GlobalAreaGeomGetter(geometryKpiGetter));
+  public DataStream<HotArea> distributed() {
+    final OutputTag<Tuple3<BoundaryID, DetectUnit, AreaID>> borderUnits = new OutputTag<Tuple3<BoundaryID, DetectUnit, AreaID>>("Boundaries") { };
+    final OutputTag<HotArea> needCombineTag = new OutputTag<HotArea>("NeedCombineAreas") { };
+    SingleOutputStreamOperator<HotArea> localAreas =  localAreaDetect(source);
+    DataStream<MapRule> idMapRules = getIdMapRules(localAreas.getSideOutput(borderUnits));
+    DataStream<HotArea> globalAreas = alterAreaID(idMapRules, localAreas.getSideOutput(needCombineTag));
+    return hotAreaFinalCombine(globalAreas.union(localAreas), new HotAreaFinalCombiner());
+  }
+
+  public DataStream<HotArea> centralized() {
+    SingleOutputStreamOperator<HotArea> localAreas =  localAreaDetect(source);
+    return localAreas.windowAll(hotAreaDetectWindow)
+        .process(new CentralizedCombiner());
   }
 
   /**
-   * 3路输出
+   * 热点单元数据流作冗余分区, 以分区网格为单位并行作本地热点区域识别.
+   *
+   * @param source 热点单元数据流
+   * @return 3路输出:
+   *    默认输出: 不需要和其他分区热点区域合并的热点区域; <br>
+   *    旁路输出: "need combine areas" 中为需要和其他分区内识别的热点区域合并的热点区域;<br>
+   *    旁路输出: "border" 中为热点区域ID\分区边界ID\监控单元ID等信息.
    */
-  private SingleOutputStreamOperator<Tuple2<AreaID, List<DetectUnit>>> localDetect(DataStream<DetectUnit> source) {
+  private SingleOutputStreamOperator<HotArea> localAreaDetect(DataStream<DetectUnit> source) {
     return source
         .keyBy(DetectUnit::getId)
         .flatMap(new RedundantRouter())
         .keyBy(f -> f.f0)
-        .window(detectWindowAssigner)
+        .window(hotAreaDetectWindow)
         .process(new LocalAreaDetect());
   }
 
-  private DataStream<Tuple2<AreaID, AreaID>> getFixRule(DataStream<Tuple3<BoundryID, DetectUnit, AreaID>> marginUnitStream) {
-    return marginUnitStream.keyBy(r -> r.f0).window(detectWindowAssigner)
+  /**
+   * 基于Interval join, 将待合并热点区域和适配的Area ID映射规则关联, 修改待合并热点区域的Area ID.
+   */
+  private DataStream<MapRule> getIdMapRules(DataStream<Tuple3<BoundaryID, DetectUnit, AreaID>> marginUnitStream) {
+    return marginUnitStream.keyBy(r -> r.f0).window(hotAreaDetectWindow)
         .process(new LocalAreaLinkFinder())
-        .windowAll(detectWindowAssigner)
+        .windowAll(hotAreaDetectWindow)
         .process(new Local2GlobalMapRuleGetter());
   }
 
-  private DataStream<Tuple2<AreaID, List<DetectUnit>>> assignGlobalID(DataStream<Tuple2<AreaID, AreaID>> fixRuleStream, DataStream<Tuple2<AreaID, List<DetectUnit>>> toFixStream) {
-    return fixRuleStream.keyBy(f -> f.f0).intervalJoin(toFixStream.keyBy(f -> f.f0))
+  /**
+   * 将需要合并的热点区域元组<AreaID, List>的Area ID统一
+   */
+  private DataStream<HotArea> alterAreaID(DataStream<MapRule> fixRuleStream, DataStream<HotArea> toFixStream) {
+    return fixRuleStream.keyBy(f -> f.getFrom()).intervalJoin(toFixStream.keyBy(f -> f.getAreaID()))
         .between(Time.seconds(-1), Time.seconds(1))
         .process(new Local2GlobalJoinFunction());
   }
 
-  private DataStream<Geometry> getPolygon(DataStream<Tuple2<AreaID, List<DetectUnit>>> partialAreas, GlobalAreaGeomGetter getPolygonFunc) {
-    return partialAreas
-        .keyBy(f -> f.f0)
-        .window(detectWindowAssigner)
-        .process(getPolygonFunc);
+  /**
+   * 合并Area ID相同的监控单元列表们, 并输出最终的热点区域Geometry
+   */
+  private DataStream<HotArea> hotAreaFinalCombine(DataStream<HotArea> hotAreas, HotAreaFinalCombiner hotAreaFinalCombiner) {
+    return hotAreas
+        .keyBy(f -> f.getAreaID())
+        .window(hotAreaDetectWindow)
+        .process(hotAreaFinalCombiner);
   }
 
-  public static class Local2GlobalJoinFunction extends ProcessJoinFunction<Tuple2<AreaID, AreaID>, Tuple2<AreaID, List<DetectUnit>>, Tuple2<AreaID, List<DetectUnit>>> {
+  private static class Local2GlobalJoinFunction extends ProcessJoinFunction<MapRule, HotArea, HotArea> {
 
     @Override
-    public void processElement(Tuple2<AreaID, AreaID> left, Tuple2<AreaID, List<DetectUnit>> right, Context ctx, Collector<Tuple2<AreaID, List<DetectUnit>>> out) throws Exception {
-      right.f0 = left.f1;
+    public void processElement(MapRule left, HotArea right, Context ctx, Collector<HotArea> out) throws Exception {
+      right.setAreaID(left.getTo());
       out.collect(right);
     }
   }
