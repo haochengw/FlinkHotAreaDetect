@@ -51,24 +51,20 @@ public class HotArea {
   public Geometry getGeometry() {
     Geometry target = gf.createPolygon();
     for (DetectUnit du : detectUnits) {
-      target.union(du.getPolygon());
+      target = target.union(du.getPolygon());
     }
     target.setUserData(this);
     return target;
   }
 
   public void merge(HotArea area) {
-    if (timestamp == area.getTimestamp() && !areaID.equals(area.areaID)) {
-      detectUnits.addAll(area.getDetectUnits());
-    } else if (timestamp != area.getTimestamp()){
+    if (timestamp != area.getTimestamp()){
       String msg = String.format("合并的两个热点区域的时间不同,主体区域的时间为%s, 参数区域的时间为%s",
           timestamp, area.getTimestamp());
       logger.error(msg);
       throw new UnsupportedOperationException(msg);
-    } else if (areaID.equals(area.areaID)) {
-      String msg = String.format("合并的两个热点区域ID相同, 无法合并, ID: %s", areaID);
-      logger.error(msg);
-      throw new UnsupportedOperationException(msg);
+    } else {
+      detectUnits.addAll(area.getDetectUnits());
     }
   }
 
@@ -77,7 +73,7 @@ public class HotArea {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     HotArea area = (HotArea) o;
-    return Objects.equals(areaID, area.areaID) && area.getTimestamp() == timestamp;
+    return Objects.equals(areaID, area.areaID) && area.getTimestamp() == timestamp && area.getDetectUnits().equals(detectUnits);
   }
 
   @Override

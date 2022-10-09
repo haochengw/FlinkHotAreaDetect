@@ -31,12 +31,10 @@ public class Job {
   static long detectWindowLen = 10; // 10分钟滚动窗口
   static long detectWindowSlide = 10; // 10分钟滚动窗口
   static int partitionSize = 1; // 公里
-  static String IN_TOPIC = "nyc-2015-01";
+  static String IN_TOPIC = "nyc-2015-JAN-input";
   static double thres = 7;
   static String SINKFILE = "2016-01-result";
-  static String algo = "dist";
-
-  private static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+  static String algo = "cent";
 
   public static void main(String[] args) throws Exception {
     doJob(args);
@@ -65,10 +63,11 @@ public class Job {
                              WatermarkStrategy
                                      .<String>forBoundedOutOfOrderness(Duration.ofMinutes(5))
                                      .withTimestampAssigner((line, timestamp) -> {
+                                       SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                                        try {
                                          long time = sdf.parse(line.split(",")[0]).getTime();
                                          return time;
-                                       } catch (ParseException e) {
+                                       } catch (ParseException | NumberFormatException e) {
                                          logger.error("Parse error found, line is {}", line);
                                          throw new RuntimeException(e);
                                        }

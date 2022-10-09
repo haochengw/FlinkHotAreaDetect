@@ -15,11 +15,11 @@ public interface TreeIndex<T extends Geometry> {
 
   class Node<T extends Geometry> {
     T geom;
-    Tuple attr;
+    Object attr;
 
     public Node(T geom) {
       this.geom = geom;
-      this.attr = (Tuple) geom.getUserData();
+      this.attr = (Object) geom.getUserData();
     }
 
     public T getGeom() {
