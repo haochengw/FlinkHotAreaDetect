@@ -28,7 +28,6 @@ public class ShapeFileUtil {
         builder.add( "areaId", String.class );
         builder.add( "date", String.class );
         builder.add( "area", Double.class );
-        builder.add( "pickRatio", Double.class );
         builder.add( "heat", Double.class );
         builder.add( "the_geom", MultiPolygon.class );
         return builder.buildFeatureType();
@@ -92,7 +91,7 @@ public class ShapeFileUtil {
         BufferedReader br = new BufferedReader(new FileReader(file));
         WKTReader wktReader = new WKTReader();
         String line;
-        List<String> list = Arrays.asList("areaId", "date", "area", "pickUpRatio", "heat", "geometry");
+        List<String> list = Arrays.asList("areaId", "date", "area", "heat", "geometry");
         List<Map<String, Object>> data = new LinkedList<>();
         SimpleFeatureType simpleFeatureType = getSft();
         GeometryFactory factory = new GeometryFactory();
@@ -104,8 +103,7 @@ public class ShapeFileUtil {
             geom = toMultiPolygon(geom, factory);
             map.put("areaId", tokens[1]);
             map.put("date", toSdf.format(fromSdf.parse(tokens[2])));
-            map.put("area", Double.parseDouble(tokens[5]));
-            map.put("pickRatio", Double.parseDouble(tokens[4]));
+            map.put("area", Double.parseDouble(tokens[4]));
             map.put("heat", Double.parseDouble(tokens[3]));
             map.put("the_geom", geom);
             data.add(map);
