@@ -51,8 +51,8 @@ public class AreaDetect {
 
   public DataStream<HotArea> centralized() {
     SingleOutputStreamOperator<HotArea> localAreas =  localAreaDetect(source);
-    return localAreas.windowAll(hotAreaDetectWindow)
-        .process(new CentralizedCombiner());
+    return localAreas.getSideOutput(new OutputTag<HotArea>("NeedCombineAreas")).windowAll(hotAreaDetectWindow)
+        .process(new CentralizedCombiner()).union(localAreas);
   }
 
   /**
